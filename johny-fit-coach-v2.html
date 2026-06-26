@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Johny Fit Coach</title>
+<style>
+@import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0F1923;--s1:#172232;--s2:#1E2E42;--s3:#263650;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --t1:#EDF2F7;--t2:#7A99B4;--t3:#3D586E;
+  --accent:#378ADD;--accent-dim:#1A3D5C;
+  --ok:#4DB896;--ok-dim:rgba(77,184,150,0.15);
+  --warn:#E8A020;--alert:#D95555;
+}
+html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--t1)}
+.app{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative;background:var(--bg)}
+.screen{display:none;flex:1;overflow-y:auto;padding-bottom:72px}
+.screen.active{display:block}
+.statusbar{display:flex;justify-content:space-between;align-items:center;padding:12px 18px 6px;font-size:11px;font-weight:600;color:var(--t3);background:var(--bg);position:sticky;top:0;z-index:10}
+.hero{background:var(--s1);padding:16px 18px 18px;border-bottom:1px solid var(--border)}
+.h-eye{font-size:11px;color:var(--t3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em}
+.h-name{font-size:24px;font-weight:600;color:var(--t1);margin-bottom:14px}
+.h-name span{color:var(--accent)}
+.track-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:6px}
+.track-mid{color:var(--ok);font-weight:600}
+.track-bar{height:6px;background:var(--s3);border-radius:3px;overflow:hidden}
+.track-fill{height:100%;border-radius:3px;background:var(--ok);transition:width .6s ease}
+.bd{padding:14px 14px 0}
+.lbl{font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--t3);text-transform:uppercase;margin:16px 0 8px}
+.ccard{background:var(--s1);border:1px solid rgba(55,138,221,0.22);border-radius:14px;padding:13px 14px;margin-bottom:10px;display:flex;gap:11px;align-items:flex-start}
+.cav{width:34px;height:34px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:17px;flex-shrink:0}
+.ctxt{font-size:13px;color:var(--t1);line-height:1.6}
+.ctip{font-size:11px;color:var(--t2);margin-top:5px;border-top:1px solid var(--border);padding-top:5px}
+.stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.scard{background:var(--s1);border:0.5px solid var(--border2);border-radius:14px;padding:13px}
+.sc-lbl{font-size:11px;color:var(--t3);margin-bottom:4px}
+.sc-val{font-size:22px;font-weight:600;color:var(--t1)}
+.sc-val span{font-size:13px;font-weight:400;color:var(--t2)}
+.sc-sub{font-size:11px;color:var(--t2);margin-top:2px}
+.mini-bar{height:4px;background:var(--s3);border-radius:2px;overflow:hidden;margin-top:8px}
+.mini-fill{height:100%;border-radius:2px;transition:width .5s ease}
+.f-ok{background:var(--ok)}.f-warn{background:var(--warn)}.f-info{background:var(--accent)}
+.sc-dot{width:7px;height:7px;border-radius:50%;margin-top:7px}
+.d-ok{background:var(--ok)}.d-warn{background:var(--warn)}.d-info{background:var(--accent)}.d-alert{background:var(--alert)}
+.wstrip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-bottom:6px}
+.wd{background:var(--s1);border-radius:9px;padding:7px 3px;text-align:center;cursor:pointer;border:1px solid transparent;transition:all .15s}
+.wd:hover{border-color:var(--border2)}
+.wd.done{background:var(--ok-dim);border-color:rgba(77,184,150,0.3)}
+.wd.today{border-color:var(--accent)}
+.wdn{font-size:9px;color:var(--t3);font-weight:600}
+.wdd{width:6px;height:6px;border-radius:50%;margin:4px auto 0;background:var(--s3)}
+.wd.done .wdd{background:var(--ok)}.wd.today .wdd{background:var(--accent)}
+.brow{background:var(--s1);border-radius:12px;padding:12px 14px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}
+.bn{font-size:13px;color:var(--t1);font-weight:500}
+.bs{font-size:10px;color:var(--t3);margin-top:2px}
+.bval{font-size:14px;font-weight:600;text-align:right}
+.bunit{font-size:10px;color:var(--t3);text-align:right;margin-top:1px}
+.sdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.sdot-ok{background:var(--ok)}.sdot-warn{background:var(--warn)}.sdot-alert{background:var(--alert)}
+.tblock{background:var(--s1);border-radius:14px;margin-bottom:9px;overflow:hidden}
+.thdr{background:var(--s2);padding:11px 15px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.tday{font-size:13px;font-weight:600;color:var(--t1)}
+.tbadge{font-size:10px;padding:3px 9px;border-radius:8px;background:rgba(55,138,221,0.15);color:var(--accent);font-weight:600}
+.tbody{padding:10px 15px}
+.titem{font-size:13px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px}
+.titem:last-child{border-bottom:none}
+.titem .ico-sm{font-size:14px;color:var(--t3);flex-shrink:0}
+.phdr{background:var(--s1);border-radius:14px;padding:15px;margin-bottom:9px;display:flex;align-items:center;gap:13px}
+.pav{width:48px;height:48px;border-radius:50%;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--accent)}
+.pname{font-size:15px;font-weight:600;color:var(--t1)}
+.psub{font-size:12px;color:var(--t2);margin-top:3px}
+.prow{background:var(--s1);border-radius:11px;padding:12px 14px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.pk{color:var(--t2)}.pv{font-weight:600;color:var(--t1)}
+.input-card{background:var(--s1);border:0.5px solid var(--border2);border-radius:14px;padding:15px;margin-bottom:10px}
+.input-card h3{font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.input-card h3 .ico{font-size:16px;color:var(--accent)}
+.input-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.input-row label{font-size:12px;color:var(--t2);min-width:80px}
+.input-row input{background:var(--s2);border:0.5px solid var(--border2);border-radius:9px;color:var(--t1);font-size:14px;padding:8px 11px;flex:1;outline:none;transition:border-color .15s}
+.input-row input:focus{border-color:var(--accent)}
+.btn-save{width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s;margin-top:4px}
+.btn-save:hover{opacity:.88}
+.btn-save:disabled{opacity:.5;cursor:not-allowed}
+.log-list{list-style:none}
+.log-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.log-item:last-child{border-bottom:none}
+.log-date{color:var(--t3);font-size:11px}
+.log-val{font-weight:600;color:var(--t1)}
+.log-badge{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:600;margin-left:6px}
+.chat-win{background:var(--s2);border-radius:14px;padding:12px;min-height:200px;max-height:380px;overflow-y:auto;margin-bottom:12px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
+.msg{max-width:90%;font-size:13px;line-height:1.6;padding:10px 13px;border-radius:13px}
+.msg.coach{background:var(--s1);border:0.5px solid var(--border2);color:var(--t1);align-self:flex-start;border-bottom-left-radius:3px}
+.msg.user{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.msg.loading{color:var(--t3);font-style:italic;background:var(--s1);border:0.5px solid var(--border);align-self:flex-start}
+.score-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:2px;align-self:flex-start}
+.sp-ok{background:var(--ok-dim);color:var(--ok)}
+.sp-warn{background:rgba(232,160,32,0.15);color:var(--warn)}
+.sp-alert{background:rgba(217,85,85,0.15);color:var(--alert)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{font-size:12px;padding:5px 11px;border-radius:14px;border:0.5px solid var(--border2);cursor:pointer;background:var(--s1);color:var(--t2);transition:all .15s}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.coach-input-wrap{display:flex;flex-direction:column;gap:8px}
+.coach-input-wrap select{background:var(--s2);border:0.5px solid var(--border2);border-radius:10px;color:var(--t1);font-size:13px;padding:9px 11px;outline:none}
+.coach-input-wrap select:focus{border-color:var(--accent)}
+.coach-input-wrap textarea{background:var(--s2);border:0.5px solid var(--border2);border-radius:10px;color:var(--t1);font-size:13px;padding:10px 12px;resize:none;line-height:1.5;min-height:72px;font-family:inherit;outline:none;transition:border-color .15s}
+.coach-input-wrap textarea:focus{border-color:var(--accent)}
+.coach-input-wrap textarea::placeholder{color:var(--t3)}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--s1);border-top:1px solid var(--border2);display:flex;justify-content:space-around;align-items:center;padding:8px 4px 16px;z-index:20}
+.nb{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px 12px;border:none;background:none;color:var(--t2);border-radius:11px;transition:all .15s;outline:none;min-width:52px}
+.nb .ico{font-size:22px;transition:color .15s}
+.nb-l{font-size:10px;font-weight:600;transition:color .15s;letter-spacing:.02em}
+.nb:hover{background:rgba(55,138,221,0.10);color:var(--accent)}
+.nb:hover .ico,.nb:hover .nb-l{color:var(--accent)}
+.nb:active{background:rgba(55,138,221,0.22);color:#fff}
+.nb.active{color:var(--accent)}
+.nb.active .ico,.nb.active .nb-l{color:var(--accent)}
+.empty-state{text-align:center;padding:24px 16px;color:var(--t3);font-size:13px}
+.sc-ok{background:var(--ok-dim);color:var(--ok)}
+.sc-empty{background:var(--s2);color:var(--t3)}
+.sc-warn{background:rgba(232,160,32,0.15);color:var(--warn)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="statusbar">
+    <span id="time-display">9:41</span>
+    <span><i class="ti ti-wifi" style="font-size:12px"></i>&nbsp;<i class="ti ti-battery-2" style="font-size:12px"></i></span>
+  </div>
+
+  <!-- HOME -->
+  <div id="scr-home" class="screen active">
+    <div class="hero">
+      <div class="h-eye" id="greeting-text">Goedemorgen</div>
+      <div class="h-name">Johny</div>
+      <div class="track-labels">
+        <span>95 kg</span>
+        <span class="track-mid" id="hero-lost">· start vandaag</span>
+        <span>85 kg</span>
+      </div>
+      <div class="track-bar"><div class="track-fill" id="hero-fill" style="width:0%"></div></div>
+    </div>
+    <div class="bd">
+      <div class="ccard">
+        <div class="cav"><i class="ti ti-robot"></i></div>
+        <div>
+          <div class="ctxt" id="home-coach-txt">Welkom bij Johny Fit Coach. Log je eerste gewichtsmeting om te beginnen.</div>
+          <div class="ctip" id="home-coach-tip">Tip: weeg jezelf elke maandagochtend voor het ontbijt.</div>
+        </div>
+      </div>
+      <div class="lbl">Vandaag</div>
+      <div class="stat-grid">
+        <div class="scard">
+          <div class="sc-lbl">Gewicht</div>
+          <div class="sc-val" id="stat-weight">95,0 <span>kg</span></div>
+          <div class="sc-sub" id="stat-weight-sub">Startgewicht</div>
+          <div class="mini-bar"><div class="mini-fill f-info" id="bar-weight" style="width:0%"></div></div>
+          <div class="sc-dot d-info"></div>
+        </div>
+        <div class="scard">
+          <div class="sc-lbl">Gezondheidsscore</div>
+          <div class="sc-val" id="stat-health">— <span>/100</span></div>
+          <div class="sc-sub">Vul data in om te zien</div>
+          <div class="mini-bar"><div class="mini-fill f-ok" id="bar-health" style="width:0%"></div></div>
+          <div class="sc-dot d-ok" id="dot-health"></div>
+        </div>
+        <div class="scard">
+          <div class="sc-lbl">Stappen vandaag</div>
+          <div class="sc-val" id="stat-steps">0</div>
+          <div class="sc-sub">Doel: 10.000</div>
+          <div class="mini-bar"><div class="mini-fill f-warn" id="bar-steps" style="width:0%"></div></div>
+          <div class="sc-dot d-warn" id="dot-steps"></div>
+        </div>
+        <div class="scard">
+          <div class="sc-lbl">Voedingsscore</div>
+          <div class="sc-val" id="stat-food">— <span>/100</span></div>
+          <div class="sc-sub" id="stat-food-sub">Nog niets gelogd</div>
+          <div class="mini-bar"><div class="mini-fill f-ok" id="bar-food" style="width:0%"></div></div>
+          <div class="sc-dot d-ok"></div>
+        </div>
+      </div>
+      <div class="lbl">Beweegstreak deze week</div>
+      <div class="wstrip" id="week-strip"></div>
+      <div style="font-size:11px;color:var(--t3);margin-bottom:4px">Tik op een dag om te markeren als actief</div>
+    </div>
+  </div>
+
+  <!-- VOEDING -->
+  <div id="scr-voeding" class="screen">
+    <div class="hero">
+      <div class="h-eye">Voedingscoach</div>
+      <div class="h-name" style="font-size:19px;margin-bottom:0">Wat eet je vandaag?</div>
+    </div>
+    <div class="bd">
+      <div class="lbl">Coach</div>
+      <div style="font-size:11px;color:var(--t3);margin-bottom:8px">Profiel: 54j · 95→85 kg · LDL 4,34 · kracht 3×/week</div>
+      <div class="chips">
+        <span class="chip" onclick="fillChip('Ontbijt vandaag was...')">Ontbijt</span>
+        <span class="chip" onclick="fillChip('Vanavond barbecue — advies?')">Barbecue-avond</span>
+        <span class="chip" onclick="fillChip('Na mijn training gegeten:')">Na training</span>
+        <span class="chip" onclick="fillChip('Ik heb zin in een snack...')">Snackhonger</span>
+        <span class="chip" onclick="fillChip('Mijn lunch vandaag:')">Lunch</span>
+      </div>
+      <div class="chat-win" id="chat-win">
+        <div class="msg coach">Hoi Johny! Vertel wat je hebt gegeten of gaat eten. Ik geef je direct feedback op basis van je cholesterol, je afvaldoel en je training.</div>
+      </div>
+      <div class="coach-input-wrap">
+        <select id="maaltijd-sel">
+          <option value="Ontbijt">Ontbijt</option>
+          <option value="Lunch">Lunch</option>
+          <option value="Avondeten">Avondeten</option>
+          <option value="Tussendoor">Tussendoor</option>
+          <option value="Vraag">Vraag / anders</option>
+        </select>
+        <textarea id="meal-input" placeholder="Bijv: Griekse yoghurt 10%, banaan, handje noten..." rows="3"></textarea>
+        <button class="btn-save" id="send-btn" onclick="sendToCoach()">Stuur naar coach</button>
+      </div>
+      <div class="lbl" style="margin-top:16px">Vandaag gelogd</div>
+      <ul class="log-list" id="voeding-log-list"><li class="empty-state">Nog niets gelogd vandaag.</li></ul>
+    </div>
+  </div>
+
+  <!-- BIJHOUDEN -->
+  <div id="scr-bijhouden" class="screen">
+    <div class="hero">
+      <div class="h-eye">Bijhouden</div>
+      <div class="h-name" style="font-size:19px;margin-bottom:0">Log je dag</div>
+    </div>
+    <div class="bd">
+      <div class="lbl">Gewicht</div>
+      <div class="input-card">
+        <h3><i class="ti ti-scale ico"></i>Gewicht loggen</h3>
+        <div class="input-row">
+          <label>Gewicht (kg)</label>
+          <input type="number" id="inp-weight" placeholder="bijv. 94,5" step="0.1" min="70" max="130">
+        </div>
+        <div class="input-row">
+          <label>Datum</label>
+          <input type="text" id="inp-date" placeholder="vandaag">
+        </div>
+        <button class="btn-save" onclick="logWeight()">Opslaan</button>
+      </div>
+      <div class="lbl">Gewicht log</div>
+      <div class="input-card">
+        <ul class="log-list" id="weight-log-list"><li class="empty-state">Nog geen metingen ingevoerd.</li></ul>
+      </div>
+      <div class="lbl">Stappen</div>
+      <div class="input-card">
+        <h3><i class="ti ti-walk ico"></i>Stappen loggen</h3>
+        <div class="input-row">
+          <label>Stappen</label>
+          <input type="number" id="inp-steps" placeholder="bijv. 9500" step="100" min="0" max="30000">
+        </div>
+        <button class="btn-save" onclick="logSteps()">Opslaan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAINING -->
+  <div id="scr-training" class="screen">
+    <div class="hero">
+      <div class="h-eye" id="train-dag-label">Vandaag</div>
+      <div class="h-name" id="train-type-label" style="font-size:19px;margin-bottom:0">Weekschema</div>
+    </div>
+    <div class="bd">
+      <div class="ccard">
+        <div class="cav"><i class="ti ti-robot"></i></div>
+        <div><div class="ctxt" id="train-coach-txt">Bekijk je training voor vandaag hieronder.</div></div>
+      </div>
+      <div class="lbl">Schema</div>
+      <div class="tblock"><div class="thdr"><div class="tday">Maandag</div><div class="tbadge">Kracht + wandelen</div></div><div class="tbody"><div class="titem"><i class="ti ti-barbell ico-sm"></i>Krachttraining — 60 min</div><div class="titem"><i class="ti ti-walk ico-sm"></i>Wandelen — 30 min</div></div></div>
+      <div class="tblock"><div class="thdr"><div class="tday">Dinsdag</div><div class="tbadge">Cardio</div></div><div class="tbody"><div class="titem"><i class="ti ti-walk ico-sm"></i>Stevig wandelen — 45 min</div></div></div>
+      <div class="tblock"><div class="thdr"><div class="tday">Woensdag</div><div class="tbadge">Kracht + cardio</div></div><div class="tbody"><div class="titem"><i class="ti ti-barbell ico-sm"></i>Krachttraining — 60 min</div><div class="titem"><i class="ti ti-bike ico-sm"></i>Fietsen — 15 min</div></div></div>
+      <div class="tblock"><div class="thdr"><div class="tday">Donderdag</div><div class="tbadge">Cardio</div></div><div class="tbody"><div class="titem"><i class="ti ti-walk ico-sm"></i>Wandelen — 45 min</div></div></div>
+      <div class="tblock"><div class="thdr"><div class="tday">Vrijdag</div><div class="tbadge">Kracht</div></div><div class="tbody"><div class="titem"><i class="ti ti-barbell ico-sm"></i>Krachttraining — 60 min</div></div></div>
+      <div class="tblock"><div class="thdr"><div class="tday">Zaterdag</div><div class="tbadge">Actief herstel</div></div><div class="tbody"><div class="titem"><i class="ti ti-walk ico-sm"></i>Wandelen of fietsen — 60-90 min</div></div></div>
+      <div class="tblock"><div class="thdr"><div class="tday">Zondag</div><div class="tbadge">Herstel</div></div><div class="tbody"><div class="titem"><i class="ti ti-walk ico-sm"></i>Rustige wandeling — 30 min</div></div></div>
+      <div class="lbl">Krachtoefeningen (full body · 3 sets · 8-12 herh.)</div>
+      <div class="tblock"><div class="tbody">
+        <div class="titem"><i class="ti ti-chevron-right ico-sm"></i>Leg press</div>
+        <div class="titem"><i class="ti ti-chevron-right ico-sm"></i>Chest press</div>
+        <div class="titem"><i class="ti ti-chevron-right ico-sm"></i>Lat pulldown</div>
+        <div class="titem"><i class="ti ti-chevron-right ico-sm"></i>Shoulder press</div>
+        <div class="titem"><i class="ti ti-chevron-right ico-sm"></i>Row</div>
+        <div class="titem"><i class="ti ti-chevron-right ico-sm"></i>Leg curl</div>
+        <div class="titem"><i class="ti ti-chevron-right ico-sm"></i>Leg extension</div>
+        <div class="titem"><i class="ti ti-chevron-right ico-sm"></i>Plank — 3 × max</div>
+      </div></div>
+      <div class="lbl">Dagdoelen</div>
+      <div class="tblock"><div class="tbody">
+        <div class="titem"><i class="ti ti-shoe ico-sm"></i>Stappen: 10.000/dag</div>
+        <div class="titem"><i class="ti ti-droplet ico-sm"></i>Water: 2,5 liter</div>
+        <div class="titem"><i class="ti ti-moon ico-sm"></i>Slaap: 7,5–8,5 uur</div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- GEZONDHEID -->
+  <div id="scr-gezondheid" class="screen">
+    <div class="hero">
+      <div class="h-eye">Bloedwaarden</div>
+      <div class="h-name" style="font-size:19px;margin-bottom:0">Meting juni 2025</div>
+    </div>
+    <div class="bd">
+      <div class="ccard">
+        <div class="cav"><i class="ti ti-robot"></i></div>
+        <div><div class="ctxt">Je LDL vraagt de meeste aandacht. Minder verzadigd vet, meer vezels en gewichtsverlies helpen. Plan volgende meting september 2025.</div></div>
+      </div>
+      <div class="lbl">Cholesterol</div>
+      <div class="brow"><div><div class="bn">LDL cholesterol</div><div class="bs">Doel: &lt; 3,0 mmol/l · Huidig: 4,34</div></div><div style="display:flex;align-items:center;gap:10px"><div><div class="bval" style="color:var(--alert)">4,34</div><div class="bunit">mmol/l</div></div><div class="sdot sdot-alert"></div></div></div>
+      <div class="brow"><div><div class="bn">HDL cholesterol</div><div class="bs">Beschermend vet — goed!</div></div><div style="display:flex;align-items:center;gap:10px"><div><div class="bval" style="color:var(--ok)">1,48</div><div class="bunit">mmol/l</div></div><div class="sdot sdot-ok"></div></div></div>
+      <div class="brow"><div><div class="bn">Triglyceriden</div><div class="bs">Doel: &lt; 1,7 mmol/l</div></div><div style="display:flex;align-items:center;gap:10px"><div><div class="bval" style="color:var(--warn)">2,2</div><div class="bunit">mmol/l</div></div><div class="sdot sdot-warn"></div></div></div>
+      <div class="brow"><div><div class="bn">Totaal cholesterol</div><div class="bs">Doel: &lt; 5,0 mmol/l</div></div><div style="display:flex;align-items:center;gap:10px"><div><div class="bval" style="color:var(--alert)">6,83</div><div class="bunit">mmol/l</div></div><div class="sdot sdot-alert"></div></div></div>
+      <div class="brow"><div><div class="bn">Glucose</div><div class="bs">Niet nuchter gemeten</div></div><div style="display:flex;align-items:center;gap:10px"><div><div class="bval" style="color:var(--warn)">3,8</div><div class="bunit">mmol/l</div></div><div class="sdot sdot-warn"></div></div></div>
+      <div class="lbl">Nierfunctie</div>
+      <div class="brow"><div><div class="bn">CKD-EPI</div><div class="bs">Stadium G2 — licht verminderd</div></div><div style="display:flex;align-items:center;gap:10px"><div><div class="bval" style="color:var(--warn)">70</div><div class="bunit">ml/min</div></div><div class="sdot sdot-warn"></div></div></div>
+      <div class="brow"><div><div class="bn">Kreatinine</div><div class="bs">Binnen referentiewaarden</div></div><div style="display:flex;align-items:center;gap:10px"><div><div class="bval" style="color:var(--ok)">104</div><div class="bunit">umol/l</div></div><div class="sdot sdot-ok"></div></div></div>
+      <div class="lbl">Doelen na 12 weken</div>
+      <div class="tblock"><div class="tbody">
+        <div class="titem"><i class="ti ti-target ico-sm"></i>LDL: naar &lt; 3,0 mmol/l</div>
+        <div class="titem"><i class="ti ti-target ico-sm"></i>Gewicht: 85,0 kg</div>
+        <div class="titem"><i class="ti ti-calendar ico-sm"></i>Volgende meting: sept. 2025</div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- PROFIEL -->
+  <div id="scr-profiel" class="screen">
+    <div class="hero">
+      <div class="h-eye">Profiel</div>
+      <div class="h-name" style="font-size:19px;margin-bottom:0">Johny Hoesen</div>
+    </div>
+    <div class="bd">
+      <div class="phdr">
+        <div class="pav">JH</div>
+        <div><div class="pname">Johny Hoesen</div><div class="psub">54 jaar · 183 cm · Beers</div></div>
+      </div>
+      <div class="lbl">Gegevens</div>
+      <div class="prow"><span class="pk">Startgewicht</span><span class="pv">95,0 kg</span></div>
+      <div class="prow"><span class="pk">Huidig gewicht</span><span class="pv" id="profiel-weight">95,0 kg</span></div>
+      <div class="prow"><span class="pk">Doelgewicht</span><span class="pv">85,0 kg</span></div>
+      <div class="prow"><span class="pk">BMI huidig</span><span class="pv" id="profiel-bmi">28,4</span></div>
+      <div class="prow"><span class="pk">Programma</span><span class="pv" id="profiel-week">Week 1 van 12</span></div>
+      <div class="lbl">Doelen</div>
+      <div class="prow"><span class="pk">LDL doel</span><span class="pv">&lt; 3,0 mmol/l</span></div>
+      <div class="prow"><span class="pk">Stappen/dag</span><span class="pv">10.000</span></div>
+      <div class="prow"><span class="pk">Trainingen/week</span><span class="pv">3×</span></div>
+      <div class="prow"><span class="pk">Water/dag</span><span class="pv">2,5 liter</span></div>
+      <div class="prow"><span class="pk">Slaap/nacht</span><span class="pv">7,5–8,5 uur</span></div>
+      <div class="lbl">Data wissen</div>
+      <button class="btn-save" style="background:var(--alert)" onclick="clearData()">Alle data wissen</button>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bnav">
+    <button class="nb active" onclick="switchScreen('home',this)" aria-label="Home"><i class="ti ti-home ico"></i><span class="nb-l">Home</span></button>
+    <button class="nb" onclick="switchScreen('voeding',this)" aria-label="Voeding"><i class="ti ti-salad ico"></i><span class="nb-l">Voeding</span></button>
+    <button class="nb" onclick="switchScreen('bijhouden',this)" aria-label="Bijhouden"><i class="ti ti-clipboard-list ico"></i><span class="nb-l">Bijhouden</span></button>
+    <button class="nb" onclick="switchScreen('training',this)" aria-label="Training"><i class="ti ti-barbell ico"></i><span class="nb-l">Training</span></button>
+    <button class="nb" onclick="switchScreen('gezondheid',this)" aria-label="Gezondheid"><i class="ti ti-heart-rate-monitor ico"></i><span class="nb-l">Gezondheid</span></button>
+    <button class="nb" onclick="switchScreen('profiel',this)" aria-label="Profiel"><i class="ti ti-user ico"></i><span class="nb-l">Profiel</span></button>
+  </nav>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── DATA ──────────────────────────────────────────────────
+const START_WEIGHT = 95;
+const GOAL_WEIGHT  = 85;
+const HEIGHT_M     = 1.83;
+const START_DATE   = new Date('2025-06-27');
+const DAYS_NL      = ['zo','ma','di','wo','do','vr','za'];
+const DAYS_FULL    = ['Zondag','Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag'];
+
+let weightLog   = [];
+let stepsLog    = [];
+let voedingLog  = [];
+let weekDays    = {};
+let chatHistory = [];
+
+// ── SUPABASE ──────────────────────────────────────────────
+const SUPABASE_URL = 'https://tfdfuthbrtffukazwccg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_glXyL1Wzo0cOR1-Q4oY6lg_D5akngzu';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function dbLoad() {
+  const [w, s, v, wd] = await Promise.all([
+    db.from('weight_log').select('*').order('created_at'),
+    db.from('steps_log').select('*').order('created_at'),
+    db.from('voeding_log').select('*').order('created_at'),
+    db.from('week_days').select('*'),
+  ]);
+  weightLog  = w.data || [];
+  stepsLog   = s.data || [];
+  voedingLog = v.data || [];
+  weekDays   = {};
+  (wd.data || []).forEach(row => { weekDays[row.day_key] = row.active; });
+}
+
+async function dbSaveWeight(entry) {
+  const { error } = await db.from('weight_log').insert(entry);
+  if (error) console.error('Fout gewicht:', error.message);
+}
+async function dbSaveSteps(entry) {
+  const { error } = await db.from('steps_log').insert(entry);
+  if (error) console.error('Fout stappen:', error.message);
+}
+async function dbSaveVoeding(entry) {
+  const { error } = await db.from('voeding_log').insert(entry);
+  if (error) console.error('Fout voeding:', error.message);
+}
+async function dbSaveWeekDay(key, active) {
+  const { error } = await db.from('week_days').upsert({ day_key: key, active });
+  if (error) console.error('Fout weekdag:', error.message);
+}
+async function dbClearAll() {
+  await Promise.all([
+    db.from('weight_log').delete().gte('id', 0),
+    db.from('steps_log').delete().gte('id', 0),
+    db.from('voeding_log').delete().gte('id', 0),
+    db.from('week_days').delete().in('day_key', ['ma','di','wo','do','vr','za','zo']),
+  ]);
+}
+
+async function clearData() {
+  if (!confirm('Weet je zeker dat je alle data wilt wissen?')) return;
+  await dbClearAll();
+  weightLog = []; stepsLog = []; voedingLog = []; weekDays = {}; chatHistory = [];
+  updateAll();
+  alert('Data gewist.');
+}
+
+// ── GEZONDHEIDSSCORE ──────────────────────────────────────
+function calcHealthScore() {
+  let score = 0;
+  const latest = weightLog.length > 0 ? parseFloat(weightLog[weightLog.length-1].w) : START_WEIGHT;
+  const lost = START_WEIGHT - latest;
+  score += Math.max(0, Math.min(40, Math.round((lost / (START_WEIGHT - GOAL_WEIGHT)) * 40)));
+  const todayDate = new Date().toLocaleDateString('nl-NL');
+  const todaySteps = stepsLog.filter(s => s.d === todayDate);
+  const latestSteps = todaySteps.length > 0 ? todaySteps[todaySteps.length-1].s : 0;
+  score += Math.min(25, Math.round((latestSteps / 10000) * 25));
+  const trainDays = ['ma','wo','vr'];
+  score += Math.round((trainDays.filter(d => weekDays[d]).length / 3) * 20);
+  const todayFood = voedingLog.filter(v => v.d === todayDate);
+  if (todayFood.length > 0) {
+    const avg = todayFood.reduce((a,b) => a + b.score, 0) / todayFood.length;
+    score += Math.round((avg / 100) * 15);
+  }
+  return Math.min(100, score);
+}
+
+function updateHealthScore() {
+  const hs  = calcHealthScore();
+  const el  = document.getElementById('stat-health');
+  const bar = document.getElementById('bar-health');
+  const dot = document.getElementById('dot-health');
+  if (el)  el.innerHTML = `${hs} <span>/100</span>`;
+  if (bar) { bar.style.width = hs + '%'; bar.className = 'mini-fill ' + (hs>=70?'f-ok':hs>=40?'f-warn':'f-info'); }
+  if (dot) dot.className = 'sc-dot ' + (hs>=70?'d-ok':hs>=40?'d-warn':'d-alert');
+  return hs;
+}
+
+// ── COACH ─────────────────────────────────────────────────
+const COACH_SYSTEM = `Je bent een persoonlijke voedings- en gezondheidscoach voor Johny Hoesen.
+PROFIEL:
+- 54 jaar, 183 cm, huidig gewicht ~95 kg, doel 85 kg in 12 weken
+- LDL: 4,34 mmol/l (te hoog, doel <3,0). HDL: 1,48 (goed). Triglyceriden: 2,2 (verhoogd)
+- Totaalcholesterol: 6,83. Doet 3x/week krachttraining. Spiermassa behouden is belangrijk.
+- 22 jaar gestopt met roken. Geen diabetes.
+INSTRUCTIES:
+1. Geef een directe, eerlijke beoordeling in 2-3 zinnen.
+2. Zet de voedingsscore ALTIJD op een aparte regel: SCORE: [getal]/100
+3. Geef maximaal 2 concrete verbeterpunten of complimenten.
+4. Noem het effect op LDL/cholesterol als relevant.
+5. Wees motiverend maar niet overdreven positief.
+6. Schrijf in het Nederlands, B1-niveau, actief en bondig.`;
+
+function fillChip(txt) {
+  document.getElementById('meal-input').value = txt;
+  document.getElementById('meal-input').focus();
+}
+
+function addMsg(text, type) {
+  const win = document.getElementById('chat-win');
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  div.textContent = text;
+  win.appendChild(div);
+  win.scrollTop = win.scrollHeight;
+  return div;
+}
+
+async function sendToCoach() {
+  const input    = document.getElementById('meal-input');
+  const maaltijd = document.getElementById('maaltijd-sel').value;
+  const text     = input.value.trim();
+  if (!text) return;
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true; btn.textContent = 'Coach denkt na…';
+  addMsg(`${maaltijd}: ${text}`, 'user');
+  input.value = '';
+  const loading = addMsg('…', 'loading');
+  chatHistory.push({ role: 'user', content: `${maaltijd}: ${text}` });
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, system: COACH_SYSTEM, messages: chatHistory })
+    });
+    const data  = await res.json();
+    const reply = data.content?.[0]?.text || 'Geen antwoord ontvangen.';
+    loading.remove();
+    const scoreMatch = reply.match(/SCORE:\s*(\d+)\/100/i);
+    const score      = scoreMatch ? parseInt(scoreMatch[1]) : null;
+    const cleanReply = reply.replace(/SCORE:\s*\d+\/100/gi, '').trim();
+    if (score !== null) {
+      const win = document.getElementById('chat-win');
+      const pd  = document.createElement('div');
+      const cls = score >= 75 ? 'sp-ok' : score >= 50 ? 'sp-warn' : 'sp-alert';
+      const lbl = score >= 75 ? 'Goede keuze' : score >= 50 ? 'Kan beter' : 'Aanpassing nodig';
+      pd.innerHTML = `<div class="score-pill ${cls}">&#9679; ${score}/100 — ${lbl}</div>`;
+      win.appendChild(pd); win.scrollTop = win.scrollHeight;
+      const todayDate = new Date().toLocaleDateString('nl-NL');
+      const entry = { maaltijd, tekst: text, score, d: todayDate };
+      voedingLog.push(entry);
+      await dbSaveVoeding(entry);
+      renderVoedingLog();
+      updateHomeDashboard();
+    }
+    addMsg(cleanReply, 'coach');
+    chatHistory.push({ role: 'assistant', content: reply });
+  } catch(err) {
+    loading.textContent = 'Kon de coach niet bereiken. Controleer je verbinding.';
+    loading.className   = 'msg coach';
+  }
+  btn.disabled = false; btn.textContent = 'Stuur naar coach';
+}
+
+function renderVoedingLog() {
+  const list = document.getElementById('voeding-log-list');
+  if (!list) return;
+  const today = new Date().toLocaleDateString('nl-NL');
+  const items = voedingLog.filter(v => v.d === today);
+  if (items.length === 0) { list.innerHTML = '<li class="empty-state">Nog niets gelogd vandaag.</li>'; return; }
+  list.innerHTML = items.map(v => {
+    const cls = v.score >= 75 ? 'sc-ok' : v.score >= 50 ? 'sc-warn' : 'sp-alert';
+    return `<li class="log-item"><span><span class="log-date">${v.maaltijd}</span><br><span style="color:var(--t2);font-size:12px">${v.tekst.substring(0,40)}${v.tekst.length>40?'…':''}</span></span><span class="log-badge ${cls}">${v.score}/100</span></li>`;
+  }).join('');
+}
+
+// ── TRAINING ──────────────────────────────────────────────
+function updateTrainingScreen() {
+  const day = new Date().getDay();
+  const dl  = document.getElementById('train-dag-label');
+  const tl  = document.getElementById('train-type-label');
+  const ct  = document.getElementById('train-coach-txt');
+  if (!dl) return;
+  const labels = {1:{dag:'Maandag',type:'Krachttraining + wandelen'},2:{dag:'Dinsdag',type:'Cardio dag'},3:{dag:'Woensdag',type:'Krachttraining + cardio'},4:{dag:'Donderdag',type:'Cardio dag'},5:{dag:'Vrijdag',type:'Krachttraining'},6:{dag:'Zaterdag',type:'Actief herstel'},0:{dag:'Zondag',type:'Hersteldag'}};
+  dl.textContent = labels[day].dag;
+  tl.textContent = labels[day].type;
+  if (ct) ct.textContent = {1:true,3:true,5:true}[day]
+    ? 'Vandaag is een krachtdag. Probeer alle oefeningen met een iets zwaarder gewicht dan vorige week.'
+    : (day===0||day===4) ? 'Rustdag vandaag. Een wandeling is prima — houd het licht.'
+    : 'Cardiofocus vandaag. Stevig wandelen telt mee voor je stappendoel.';
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────
+function buildWeekStrip() {
+  const strip = document.getElementById('week-strip');
+  if (!strip) return;
+  strip.innerHTML = '';
+  const todayIdx = new Date().getDay();
+  [1,2,3,4,5,6,0].forEach(dayIdx => {
+    const key = DAYS_NL[dayIdx];
+    const div = document.createElement('div');
+    div.className = 'wd' + (weekDays[key] ? ' done' : '') + (dayIdx === todayIdx ? ' today' : '');
+    div.innerHTML = `<div class="wdn">${key}</div><div class="wdd"></div>`;
+    div.onclick = async () => {
+      weekDays[key] = !weekDays[key];
+      await dbSaveWeekDay(key, weekDays[key]);
+      buildWeekStrip();
+      updateHealthScore();
+    };
+    strip.appendChild(div);
+  });
+}
+
+function updateHomeCoach(weight, steps, lost) {
+  const hour = new Date().getHours();
+  const day  = new Date().getDay();
+  const trainDays = {1:true,3:true,5:true};
+  let txt = '', tip = '';
+  if (lost === 0) {
+    txt = 'Welkom Johny! Log elke maandagochtend je gewicht om je voortgang te zien.';
+    tip = 'Tip: consistent meten is de sleutel.';
+  } else if (trainDays[day]) {
+    txt = `Vandaag is het ${DAYS_FULL[day]} — krachttraining staat op het programma. Je hebt al ${lost.toFixed(1).replace('.',',')} kg verloren. Goed bezig!`;
+    tip = hour < 14 ? 'Eet na je training eiwitten — Skyr of kwark werkt prima.' : 'Vergeet je water niet: doel is 2,5 liter.';
+  } else {
+    const stepsLeft = Math.max(0, 10000 - steps);
+    txt = stepsLeft > 0
+      ? `Je hebt vandaag nog ${stepsLeft.toLocaleString('nl-NL')} stappen te gaan.`
+      : 'Je stappendoel is gehaald vandaag! Dat helpt je cholesterol en je gewicht.';
+    tip = `Verloren: ${lost.toFixed(1).replace('.',',')} kg. Nog ${(10-lost).toFixed(1).replace('.',',')} kg te gaan.`;
+  }
+  const t  = document.getElementById('home-coach-txt');
+  const tp = document.getElementById('home-coach-tip');
+  if (t)  t.textContent  = txt;
+  if (tp) tp.textContent = tip;
+}
+
+function updateHomeDashboard() {
+  const latest = weightLog.length > 0 ? parseFloat(weightLog[weightLog.length-1].w) : START_WEIGHT;
+  const lost   = Math.max(0, START_WEIGHT - latest);
+  const pct    = Math.min(100, (lost / (START_WEIGHT - GOAL_WEIGHT)) * 100);
+
+  const heroFill = document.getElementById('hero-fill');
+  const heroLost = document.getElementById('hero-lost');
+  if (heroFill) heroFill.style.width = pct.toFixed(1) + '%';
+  if (heroLost) heroLost.textContent = lost > 0 ? `−${lost.toFixed(1).replace('.',',')} kg · ${pct.toFixed(0)}%` : '· start vandaag';
+
+  const sw = document.getElementById('stat-weight');
+  const swSub = document.getElementById('stat-weight-sub');
+  const barW  = document.getElementById('bar-weight');
+  if (sw)    sw.innerHTML      = `${latest.toFixed(1).replace('.',',')} <span>kg</span>`;
+  if (swSub) swSub.textContent = lost > 0 ? `−${lost.toFixed(1).replace('.',',')} kg verloren` : 'Startgewicht';
+  if (barW)  barW.style.width  = pct.toFixed(1) + '%';
+
+  const todayDate     = new Date().toLocaleDateString('nl-NL');
+  const todayStepsArr = stepsLog.filter(s => s.d === todayDate);
+  const latestSteps   = todayStepsArr.length > 0 ? todayStepsArr[todayStepsArr.length-1].s : 0;
+  const stepsPct      = Math.min(100, (latestSteps / 10000) * 100);
+  const stEl  = document.getElementById('stat-steps');
+  const barSt = document.getElementById('bar-steps');
+  const dotSt = document.getElementById('dot-steps');
+  if (stEl)  stEl.textContent = latestSteps.toLocaleString('nl-NL');
+  if (barSt) { barSt.style.width = stepsPct.toFixed(1) + '%'; barSt.className = 'mini-fill ' + (stepsPct>=80?'f-ok':stepsPct>=40?'f-warn':'f-info'); }
+  if (dotSt) dotSt.className = 'sc-dot ' + (stepsPct>=80?'d-ok':stepsPct>=40?'d-warn':'d-alert');
+
+  const todayFood = voedingLog.filter(v => v.d === todayDate);
+  const fsEl    = document.getElementById('stat-food');
+  const fsSubEl = document.getElementById('stat-food-sub');
+  const barF    = document.getElementById('bar-food');
+  if (todayFood.length > 0) {
+    const avg = Math.round(todayFood.reduce((a,b) => a+b.score, 0) / todayFood.length);
+    if (fsEl)    fsEl.innerHTML      = `${avg} <span>/100</span>`;
+    if (fsSubEl) fsSubEl.textContent = `${todayFood.length} maaltijd${todayFood.length>1?'en':''} gelogd`;
+    if (barF)    barF.style.width    = avg + '%';
+  } else {
+    if (fsEl)    fsEl.innerHTML      = `— <span>/100</span>`;
+    if (fsSubEl) fsSubEl.textContent = 'Nog niets gelogd';
+    if (barF)    barF.style.width    = '0%';
+  }
+
+  updateHomeCoach(latest, latestSteps, lost);
+
+  const bmi = (latest / (HEIGHT_M * HEIGHT_M)).toFixed(1);
+  const pw  = document.getElementById('profiel-weight');
+  const pb  = document.getElementById('profiel-bmi');
+  if (pw) pw.textContent = latest.toFixed(1).replace('.',',') + ' kg';
+  if (pb) pb.textContent = bmi;
+
+  const week = Math.min(12, Math.floor(Math.floor((new Date() - START_DATE) / 86400000) / 7) + 1);
+  const pw2  = document.getElementById('profiel-week');
+  if (pw2) pw2.textContent = `Week ${week} van 12`;
+
+  updateHealthScore();
+}
+
+async function logWeight() {
+  const raw  = document.getElementById('inp-weight').value.replace(',','.');
+  const val  = parseFloat(raw);
+  const date = document.getElementById('inp-date').value.trim() || new Date().toLocaleDateString('nl-NL');
+  if (isNaN(val) || val < 70 || val > 130) { alert('Voer een geldig gewicht in (70–130 kg).'); return; }
+  const entry = { w: val, d: date };
+  weightLog.push(entry);
+  await dbSaveWeight(entry);
+  document.getElementById('inp-weight').value = '';
+  updateAll();
+}
+
+function renderWeightLog() {
+  const list = document.getElementById('weight-log-list');
+  if (!list) return;
+  if (weightLog.length === 0) { list.innerHTML = '<li class="empty-state">Nog geen metingen ingevoerd.</li>'; return; }
+  list.innerHTML = [...weightLog].reverse().slice(0, 8).map(e => {
+    const w = parseFloat(e.w), diff = START_WEIGHT - w;
+    const cls = diff > 0 ? 'sc-ok' : diff < 0 ? 'sc-warn' : 'sc-empty';
+    const sign = diff > 0 ? '−' : diff < 0 ? '+' : '±';
+    return `<li class="log-item"><span class="log-date">${e.d}</span><span class="log-val">${w.toFixed(1).replace('.',',')} kg<span class="log-badge ${cls}">${sign}${Math.abs(diff).toFixed(1).replace('.',',')}</span></span></li>`;
+  }).join('');
+}
+
+async function logSteps() {
+  const val = parseInt(document.getElementById('inp-steps').value);
+  if (isNaN(val) || val < 0) { alert('Voer een geldig aantal stappen in.'); return; }
+  const entry = { s: val, d: new Date().toLocaleDateString('nl-NL') };
+  stepsLog.push(entry);
+  await dbSaveSteps(entry);
+  document.getElementById('inp-steps').value = '';
+  updateAll();
+}
+
+// ── APP ───────────────────────────────────────────────────
+function updateTime() {
+  const now = new Date(), h = now.getHours(), m = now.getMinutes();
+  document.getElementById('time-display').textContent = h + ':' + String(m).padStart(2,'0');
+  const greet = h < 12 ? 'Goedemorgen' : h < 18 ? 'Goedemiddag' : 'Goedenavond';
+  const el = document.getElementById('greeting-text');
+  if (el) el.textContent = greet;
+}
+
+function switchScreen(id, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
+  document.getElementById('scr-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+function updateAll() {
+  updateTime();
+  buildWeekStrip();
+  updateHomeDashboard();
+  updateTrainingScreen();
+  renderWeightLog();
+  renderVoedingLog();
+}
+
+async function init() {
+  updateTime();
+  try { await dbLoad(); } catch(e) { console.error('Kan data niet laden:', e); }
+  updateAll();
+  setInterval(updateTime, 30000);
+  const di = document.getElementById('inp-date');
+  if (di) di.placeholder = new Date().toLocaleDateString('nl-NL');
+}
+
+init();
+</script>
+</body>
+</html>
