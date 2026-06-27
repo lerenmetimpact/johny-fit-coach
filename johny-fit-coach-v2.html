@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Johny Fit Coach</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#378ADD">
 <style>
 @import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -121,6 +123,11 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
 .sc-ok{background:var(--ok-dim);color:var(--ok)}
 .sc-empty{background:var(--s2);color:var(--t3)}
 .sc-warn{background:rgba(232,160,32,0.15);color:var(--warn)}
+.suggest-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.suggest-card{background:var(--s1);border:0.5px solid var(--border2);border-radius:14px;padding:12px;cursor:pointer;transition:border-color .15s;display:flex;flex-direction:column}
+.suggest-card:hover{border-color:var(--accent)}
+.sg-naam{font-size:13px;font-weight:600;color:var(--t1);margin-bottom:4px}
+.sg-ing{font-size:11px;color:var(--t2);line-height:1.5;flex:1}
 </style>
 </head>
 <body>
@@ -204,6 +211,8 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
         <span class="chip" onclick="fillChip('Ik heb zin in een snack...')">Snackhonger</span>
         <span class="chip" onclick="fillChip('Mijn lunch vandaag:')">Lunch</span>
       </div>
+      <div id="suggestion-block"></div>
+
       <div class="chat-win" id="chat-win">
         <div class="msg coach">Hoi Johny! Vertel wat je hebt gegeten of gaat eten. Ik geef je direct feedback op basis van je cholesterol, je afvaldoel en je training.</div>
       </div>
@@ -295,6 +304,37 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
         <div class="titem"><i class="ti ti-droplet ico-sm"></i>Water: 2,5 liter</div>
         <div class="titem"><i class="ti ti-moon ico-sm"></i>Slaap: 7,5–8,5 uur</div>
       </div></div>
+
+      <div class="lbl">Training loggen</div>
+      <div class="input-card">
+        <h3><i class="ti ti-barbell ico"></i>Sessie vastleggen</h3>
+        <div class="input-row">
+          <label>Type</label>
+          <select id="inp-train-type" style="background:var(--s2);border:0.5px solid var(--border2);border-radius:9px;color:var(--t1);font-size:14px;padding:8px 11px;flex:1;outline:none">
+            <option value="Krachttraining">Krachttraining</option>
+            <option value="Wandelen">Wandelen</option>
+            <option value="Fietsen">Fietsen</option>
+            <option value="Cardio">Cardio</option>
+            <option value="Actief herstel">Actief herstel</option>
+          </select>
+        </div>
+        <div class="input-row">
+          <label>Duur (min)</label>
+          <input type="number" id="inp-train-duur" placeholder="bijv. 60" min="5" max="300">
+        </div>
+        <div class="input-row">
+          <label>Notitie</label>
+          <input type="text" id="inp-train-notitie" placeholder="Optioneel...">
+        </div>
+        <button class="btn-save" onclick="logTraining()">Opslaan</button>
+      </div>
+
+      <div class="lbl">Recente sessies</div>
+      <div class="input-card">
+        <ul class="log-list" id="training-log-list">
+          <li class="empty-state">Nog geen sessies gelogd.</li>
+        </ul>
+      </div>
     </div>
   </div>
 
@@ -350,6 +390,15 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSys
       <div class="prow"><span class="pk">Trainingen/week</span><span class="pv">3×</span></div>
       <div class="prow"><span class="pk">Water/dag</span><span class="pv">2,5 liter</span></div>
       <div class="prow"><span class="pk">Slaap/nacht</span><span class="pv">7,5–8,5 uur</span></div>
+      <div class="lbl">Anthropic API key</div>
+      <div class="input-card">
+        <div class="input-row">
+          <label>API key</label>
+          <input type="password" id="inp-apikey" placeholder="sk-ant-..." autocomplete="off">
+        </div>
+        <button class="btn-save" onclick="saveApiKey()">Opslaan</button>
+        <div id="apikey-status" style="font-size:11px;color:var(--t2);margin-top:8px"></div>
+      </div>
       <div class="lbl">Data wissen</div>
       <button class="btn-save" style="background:var(--alert)" onclick="clearData()">Alle data wissen</button>
     </div>
@@ -379,6 +428,7 @@ const DAYS_FULL    = ['Zondag','Maandag','Dinsdag','Woensdag','Donderdag','Vrijd
 let weightLog   = [];
 let stepsLog    = [];
 let voedingLog  = [];
+let trainingLog = [];
 let weekDays    = {};
 let chatHistory = [];
 
@@ -388,17 +438,24 @@ const SUPABASE_KEY = 'sb_publishable_glXyL1Wzo0cOR1-Q4oY6lg_D5akngzu';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function dbLoad() {
-  const [w, s, v, wd] = await Promise.all([
+  const [w, s, v, wd, t] = await Promise.all([
     db.from('weight_log').select('*').order('created_at'),
     db.from('steps_log').select('*').order('created_at'),
     db.from('voeding_log').select('*').order('created_at'),
     db.from('week_days').select('*'),
+    db.from('training_log').select('*').order('created_at'),
   ]);
-  weightLog  = w.data || [];
-  stepsLog   = s.data || [];
-  voedingLog = v.data || [];
-  weekDays   = {};
+  weightLog   = w.data || [];
+  stepsLog    = s.data || [];
+  voedingLog  = v.data || [];
+  trainingLog = t.data || [];
+  weekDays    = {};
   (wd.data || []).forEach(row => { weekDays[row.day_key] = row.active; });
+}
+
+async function dbSaveTraining(entry) {
+  const { error } = await db.from('training_log').insert(entry);
+  if (error) console.error('Fout training:', error.message);
 }
 
 async function dbSaveWeight(entry) {
@@ -423,6 +480,7 @@ async function dbClearAll() {
     db.from('steps_log').delete().gte('id', 0),
     db.from('voeding_log').delete().gte('id', 0),
     db.from('week_days').delete().in('day_key', ['ma','di','wo','do','vr','za','zo']),
+    db.from('training_log').delete().gte('id', 0),
   ]);
 }
 
@@ -463,6 +521,78 @@ function updateHealthScore() {
   if (bar) { bar.style.width = hs + '%'; bar.className = 'mini-fill ' + (hs>=70?'f-ok':hs>=40?'f-warn':'f-info'); }
   if (dot) dot.className = 'sc-dot ' + (hs>=70?'d-ok':hs>=40?'d-warn':'d-alert');
   return hs;
+}
+
+// ── SUGGESTIES ────────────────────────────────────────────
+const MEAL_SUGGESTIONS = {
+  ontbijt: [
+    { naam: 'Skyr & havermout',        ingredienten: '250g Skyr · 40g havermout · blauwe bessen · 25g walnoten',        score: 88 },
+    { naam: 'Eiwitomelet',             ingredienten: '1 ei + 3 eiwitten · spinazie · champignons · volkoren toast',      score: 85 },
+    { naam: 'Kwark & havermout',       ingredienten: '250g magere kwark · 40g havermout · appel · kaneel',               score: 86 },
+    { naam: 'Havermoutpap',            ingredienten: '60g havermout · halfvolle melk · banaan · lijnzaad',               score: 80 },
+    { naam: 'Volkoren toast & ei',     ingredienten: '2 volkoren sneden · 2 eieren · tomaat · komkommer',                score: 78 },
+    { naam: 'Skyr smoothiebowl',       ingredienten: 'Skyr · banaan · aardbei · 20g walnoten · chiazaad',               score: 83 },
+  ],
+  lunch: [
+    { naam: 'Kipfilet salade',         ingredienten: '150g kipfilet · grote salade · volkoren cracker · rauwkost',      score: 87 },
+    { naam: 'Volkoren boterhammen',    ingredienten: '4 sneden volkoren · hüttenkäse · kipfilet · tomaat',              score: 82 },
+    { naam: 'Tonijn maaltijdsalade',   ingredienten: 'Tonijn · kikkererwten · sla · olijfolie-citroen dressing',        score: 89 },
+    { naam: 'Kipwrap volkoren',        ingredienten: 'Volkoren wrap · kipfilet · hummus · paprika · sla',               score: 83 },
+    { naam: 'Zalmsalade',              ingredienten: '100g gerookte zalm · magere kwark · volkoren cracker · bieslook', score: 91 },
+    { naam: 'Eiersalade volkoren',     ingredienten: '3 hardgekookte eieren · volkoren brood · komkommer · radijs',     score: 80 },
+  ],
+  avondeten: [
+    { naam: 'Kip & zilvervliesrijst',  ingredienten: 'Kipfilet · zilvervliesrijst · broccoli · ½ bord groenten',       score: 86 },
+    { naam: 'Zalm & aardappelen',      ingredienten: 'Zalm · aardappelen · sperziebonen · citroen',                     score: 90 },
+    { naam: 'Biefstuk & zoete aardappel', ingredienten: 'Magere biefstuk · zoete aardappel · bloemkool',               score: 84 },
+    { naam: 'Kabeljauw & groenten',    ingredienten: 'Kabeljauw · zilvervliesrijst · paprikamix · knoflook',            score: 88 },
+    { naam: 'Kip stir-fry',           ingredienten: 'Kipfilet · wokgroenten · sojasaus light · zilvervliesrijst',       score: 85 },
+    { naam: 'Omelet & salade',         ingredienten: '3 eieren · spinazie · tomaat · feta 30g · volkoren brood',        score: 82 },
+  ],
+  tussendoor: [
+    { naam: 'Walnoten & appel',        ingredienten: '25g walnoten · 1 appel',                                          score: 88 },
+    { naam: 'Skyr naturel',            ingredienten: '200g Skyr naturel',                                                score: 85 },
+    { naam: 'Rijstwafel & hüttenkäse', ingredienten: 'Rijstwafel · 2 el hüttenkäse · komkommer',                       score: 78 },
+    { naam: 'Kwark & bessen',          ingredienten: '150g magere kwark · handje blauwe bessen',                        score: 83 },
+    { naam: 'Amandelen & peer',        ingredienten: '20g amandelen · 1 peer',                                          score: 82 },
+    { naam: 'Edamame',                 ingredienten: '100g edamame · groene thee',                                       score: 87 },
+  ],
+};
+
+function getMealMoment() {
+  const now = new Date(), t = now.getHours() + now.getMinutes() / 60;
+  if (t >= 6   && t < 10)  return 'ontbijt';
+  if (t >= 11.5 && t < 14) return 'lunch';
+  if (t >= 17  && t < 20)  return 'avondeten';
+  return 'tussendoor';
+}
+
+function buildSuggestions() {
+  const container = document.getElementById('suggestion-block');
+  if (!container) return;
+  const moment   = getMealMoment();
+  const shuffled = [...MEAL_SUGGESTIONS[moment]].sort(() => Math.random() - 0.5).slice(0, 3);
+  window._suggestions = shuffled;
+  window._suggMoment  = moment;
+  const labels = { ontbijt: 'Ontbijt', lunch: 'Lunch', avondeten: 'Avondeten', tussendoor: 'Tussendoor' };
+  container.innerHTML = `
+    <div class="lbl">${labels[moment]} — tik om direct te laten beoordelen</div>
+    <div class="suggest-grid">
+      ${shuffled.map((opt, i) => `
+        <div class="suggest-card" onclick="selectSuggestion(${i})">
+          <div class="sg-naam">${opt.naam}</div>
+          <div class="sg-ing">${opt.ingredienten}</div>
+          <span class="score-pill sp-ok" style="font-size:10px;padding:2px 8px;margin-top:6px">★ ${opt.score}/100</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+function selectSuggestion(i) {
+  const opt    = window._suggestions[i];
+  const labels = { ontbijt: 'Ontbijt', lunch: 'Lunch', avondeten: 'Avondeten', tussendoor: 'Tussendoor' };
+  document.getElementById('maaltijd-sel').value = labels[window._suggMoment];
+  document.getElementById('meal-input').value   = `${opt.naam}: ${opt.ingredienten}`;
+  sendToCoach();
 }
 
 // ── COACH ─────────────────────────────────────────────────
@@ -509,7 +639,12 @@ async function sendToCoach() {
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': localStorage.getItem('jfc_apikey') || '',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
       body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, system: COACH_SYSTEM, messages: chatHistory })
     });
     const data  = await res.json();
@@ -567,6 +702,43 @@ function updateTrainingScreen() {
     ? 'Vandaag is een krachtdag. Probeer alle oefeningen met een iets zwaarder gewicht dan vorige week.'
     : (day===0||day===4) ? 'Rustdag vandaag. Een wandeling is prima — houd het licht.'
     : 'Cardiofocus vandaag. Stevig wandelen telt mee voor je stappendoel.';
+  renderTrainingLog();
+}
+
+async function logTraining() {
+  const type    = document.getElementById('inp-train-type').value;
+  const duur    = parseInt(document.getElementById('inp-train-duur').value);
+  const notitie = document.getElementById('inp-train-notitie').value.trim();
+  const date    = new Date().toLocaleDateString('nl-NL');
+  if (isNaN(duur) || duur < 5) { alert('Voer een geldige duur in (minimaal 5 minuten).'); return; }
+  const entry = { type, duur, notitie, d: date };
+  trainingLog.push(entry);
+  await dbSaveTraining(entry);
+  document.getElementById('inp-train-duur').value    = '';
+  document.getElementById('inp-train-notitie').value = '';
+  const dayKey = DAYS_NL[new Date().getDay()];
+  weekDays[dayKey] = true;
+  await dbSaveWeekDay(dayKey, true);
+  renderTrainingLog();
+  buildWeekStrip();
+  updateHealthScore();
+}
+
+function renderTrainingLog() {
+  const list = document.getElementById('training-log-list');
+  if (!list) return;
+  if (trainingLog.length === 0) { list.innerHTML = '<li class="empty-state">Nog geen sessies gelogd.</li>'; return; }
+  const iconMap = { 'Krachttraining':'ti-barbell','Wandelen':'ti-walk','Fietsen':'ti-bike','Cardio':'ti-heart-rate-monitor','Actief herstel':'ti-leaf' };
+  list.innerHTML = [...trainingLog].reverse().slice(0, 10).map(e => {
+    const icon = iconMap[e.type] || 'ti-activity';
+    return `<li class="log-item">
+      <span>
+        <span class="log-val"><i class="ti ${icon}" style="font-size:13px;color:var(--accent);margin-right:5px"></i>${e.type}</span><br>
+        <span class="log-date">${e.d}${e.notitie ? ' · ' + e.notitie : ''}</span>
+      </span>
+      <span class="log-badge sc-ok">${e.duur} min</span>
+    </li>`;
+  }).join('');
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────
@@ -720,6 +892,7 @@ function switchScreen(id, btn) {
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
   document.getElementById('scr-' + id).classList.add('active');
   if (btn) btn.classList.add('active');
+  if (id === 'voeding') buildSuggestions();
 }
 
 function updateAll() {
@@ -729,6 +902,15 @@ function updateAll() {
   updateTrainingScreen();
   renderWeightLog();
   renderVoedingLog();
+  renderTrainingLog();
+}
+
+function saveApiKey() {
+  const key = document.getElementById('inp-apikey').value.trim();
+  if (!key.startsWith('sk-ant-')) { alert('Ongeldige key — moet beginnen met sk-ant-'); return; }
+  localStorage.setItem('jfc_apikey', key);
+  document.getElementById('inp-apikey').value = '';
+  document.getElementById('apikey-status').textContent = '✓ API key opgeslagen op dit apparaat';
 }
 
 async function init() {
@@ -741,6 +923,10 @@ async function init() {
 }
 
 init();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
 </script>
 </body>
 </html>
